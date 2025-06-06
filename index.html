@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>我的 Nostr 发帖</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      line-height: 1.6;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    .note {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .timestamp {
+      color: #888;
+      font-size: 0.9em;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>我的 Nostr 发帖（最新在前）</h2>
+  <h4>更多请查看我的 <a href = "https://snort.social/p/npub1wlpfd84ymdx2rpvnqht7h2lkq5lazvkaejywrvtchlvn3geulfgqp74qq0">Nostr</a></h4>
+  <div id="feed">加载中...</div>
+
+  <script>
+    const pubkey = "77c2969ea4db4ca1859305d7ebabf6053fd132ddcc88e1b178bfd938a33cfa50"; // 示例：f00ba41234abcd56789......
+    const relay = new WebSocket("wss://relay.damus.io");
+    const notes = [];
+
+    relay.onopen = () => {
+      relay.send(JSON.stringify([
+        "REQ", "myfeed",
+        {
+          kinds: [1],
+          authors: [pubkey],
+          limit: 20
+        }
+      ]));
+    };
+
+    relay.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data[0] === "EVENT") {
+        notes.push(data[2]);
+      } else if (data[0] === "EOSE") {
+        // 接收完毕，按时间倒序排序
+        notes.sort((a, b) => b.created_at - a.created_at);
+        renderFeed();
+      }
+    };
+
+    function renderFeed() {
+      const feed = document.getElementById("feed");
+      feed.innerHTML = "";
+
+      if (notes.length === 0) {
+        feed.innerText = "暂无发帖。";
+        return;
+      }
+
+      notes.forEach(note => {
+        const div = document.createElement("div");
+        div.className = "note";
+        const time = new Date(note.created_at * 1000).toLocaleString();
+        div.innerHTML = `<div>${escapeHtml(note.content)}</div><div class="timestamp">${time}</div>`;
+        feed.appendChild(div);
+      });
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>

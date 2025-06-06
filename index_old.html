@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Nostr Feed</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .note { border-bottom: 1px solid #ccc; padding: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>我的 Nostr 发帖</h2>
+  <div id="feed">加载中...</div>
+
+  <script>
+    const pubkey = "77c2969ea4db4ca1859305d7ebabf6053fd132ddcc88e1b178bfd938a33cfa50";
+    const relay = new WebSocket("wss://relay.damus.io");
+
+    relay.onopen = () => {
+      relay.send(JSON.stringify([
+        "REQ", "myfeed",
+        {
+          "kinds": [1],
+          "authors": [pubkey],
+          "limit": 10
+        }
+      ]));
+    };
+
+    relay.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data[0] === "EVENT") {
+        const note = data[2];
+        const content = note.content;
+        const time = new Date(note.created_at * 1000).toLocaleString();
+
+        const feed = document.getElementById("feed");
+        const div = document.createElement("div");
+        div.className = "note";
+        div.innerHTML = `<div>${content}</div><small>${time}</small>`;
+        feed.prepend(div);
+      }
+    };
+  </script>
+</body>
+</html>
