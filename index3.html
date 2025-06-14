@@ -67,12 +67,7 @@
     relay.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data[0] === "EVENT") {
-        const note = data[2];
-        // 检查是否为回复，如果不是回复才添加到列表中
-        const isReply = note.tags && note.tags.some(tag => tag[0] === 'e');
-        if (!isReply) {
-          notes.push(note);
-        }
+        notes.push(data[2]);
       } else if (data[0] === "EOSE") {
         // 接收完毕，按时间倒序排序
         notes.sort((a, b) => b.created_at - a.created_at);
